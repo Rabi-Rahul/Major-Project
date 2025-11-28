@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeLink Detector | CTI India</title>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    body {
+      background-color: #0e1525;
+      color: #d1d5db;
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: auto;
+      padding: 50px 0;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      color: #69ff94;
+      margin-bottom: 5px;
+    }
+    p.subtitle {
+      color: #9ca3af;
+      font-size: 0.95rem;
+      margin-bottom: 30px;
+    }
+
+    .scan-box {
+      display: flex;
+      gap: 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 30px;
+      border-radius: 12px;
+    }
+
+    form {
+      width: 50%;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      background: #111827;
+      border: 1px solid #374151;
+      color: #eee;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #22c55e;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #000;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #16a34a;
+    }
+
+    .link-result {
+      width: 50%;
+      margin-top: 0;
+      padding: 20px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      line-height: 1.6;
+      color: #ddd;
+      font-size: 0.95rem;
+    }
+
+    .link-result ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .link-result li {
+      margin: 5px 0;
+    }
+
+    footer {
+      margin-top: 70px;
+      text-align: center;
+      padding: 15px;
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>SafeLink Detector</h1>
+    <p class="subtitle">Paste any suspicious link to check if it may be dangerous.</p>
+
+    <div class="scan-box">
+      <!-- LEFT: Input -->
+      <form>
+        <label for="url-input">Suspicious URL</label>
+        <input type="text" id="url-input" placeholder="https://bit.ly/paytm-free-wallet-update" required>
+        <button type="submit">Scan Link</button>
+      </form>
+
+      <!-- RIGHT: Result -->
+      <div class="link-result">
+        <p style="color:#aaa;">🔍 Waiting for scan...</p>
+      </div>
+    </div>
+
+    <p style="font-size:0.8rem;color:#6b7280;margin-top:15px;">
+      * Live version will integrate VirusTotal, URLHaus, and Whois API.
+    </p>
+  </div>
+
+  <footer>
+    © 2025 Cyber Threat Intelligence – India &nbsp;|&nbsp; Academic Project | Research & Awareness Use Only
+  </footer>
+
+<script>
+const form = document.querySelector("form");
+const resultBox = document.querySelector(".link-result");
+
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  let url = document.getElementById("url-input").value;
+
+  // 🧹 Clear previous results + show loading
+  resultBox.innerHTML = `<p style="color:#aaa;">⏳ Scanning, please wait...</p>`;
+
+  try {
+    let response = await fetch("http://127.0.0.1:8000/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    let result = await response.json();
+
+    // 🎨 Risk Color
+    let color = "#22c55e"; // safe (green)
+    if (result.status.includes("Suspicious")) color = "#facc15"; // yellow
+    if (result.status.includes("Malicious") || result.status.includes("High")) color = "#ef4444"; // red
+
+    // 📝 Domain Age Text
+    let age = result.domain_age_days ? `${result.domain_age_days} days old` : "Unknown";
+
+    resultBox.innerHTML = `
+      <h3>🔎 Scan Result</h3>
+      <p style="font-weight:700;color:${color};font-size:1.1rem;">${result.status}</p>
+      <ul>
+        <li><b>🌍 Server Country:</b> ${result.server_country || "Unknown"}</li>
+        <li><b>🏢 ISP:</b> ${result.isp || "Unknown"}</li>
+        <li><b>🏳️ Domain Country:</b> ${result.domain_country || "Unknown"}</li>
+        <li><b>🔐 Registrar:</b> ${result.registrar || "Unknown"}</li>
+        <li><b>⏳ Domain Age:</b> ${age}</li>
+        <li><b>🖥️ Server IP:</b> ${result.server_ip || "Unknown"}</li>
+      </ul>
+    `;
+  } catch (error) {
+    resultBox.innerHTML = `<p style="color:#ef4444;">❌ Error: Could not scan this link.</p>`;
+  }
+});
+</script>
+
+</body>
+</html>
